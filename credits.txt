@@ -1,0 +1,5 @@
+Original Code: EmulatorJS
+This is a fork of EmulatorJS/Demo ALTHOUGH There Is No EmulatorJS Copyright Notice In The LICENSE file. I have submitted this as an issue to them.
+Code Edited By: StuffzEZ, OptionallyBlueStudios Team
+Hosted By: GitHub, GitHub Pages
+Powered By: Cloudflare, GitHub, EmulatorJS
