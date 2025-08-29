@@ -211,6 +211,20 @@ function toggleSystem(systemName) {
   list.style.display = list.style.display === 'block' ? 'none' : 'block';
 }
 
+// Change/Add System Image (via URL)
+function changeSystemImage(systemName) {
+  const url = prompt("Enter image URL for " + systemName + ". You can also view our asset library: https://optb.short.gy/retbro/assetlib :", systems[systemName].sys_image || "");
+  if (!url) return;
+  systems[systemName].sys_image = url.trim();
+  renderSystems();
+}
+
+// Clear system image
+function clearSystemImage(systemName) {
+  systems[systemName].sys_image = "";
+  renderSystems();
+}
+
 // Render all systems
 function renderSystems() {
   const container = document.getElementById('systemsContainer');
@@ -231,6 +245,8 @@ function renderSystems() {
         <div>
           <button class="icon-btn" onclick="event.stopPropagation(); addLink('${systemName}')">＋</button>
           ${systemName !== "Retbro" ? `
+            <button class="icon-btn" onclick="event.stopPropagation(); changeSystemImage('${systemName}')">📷</button>
+            <button class="icon-btn" onclick="event.stopPropagation(); clearSystemImage('${systemName}')">🗙</button>
             <button class="icon-btn" onclick="event.stopPropagation(); editSystemName('${systemName}')">✎</button>
             <button class="icon-btn" onclick="event.stopPropagation(); removeSystem('${systemName}')">🗑</button>
           ` : ''}
