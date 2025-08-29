@@ -6,9 +6,9 @@
   name="viewport"
   content="width=device-width, initial-scale=1.0"
 />
-<title>Retbro RetroPie Menu</title>
+<title>Retbro Menu</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
   :root{
     --retro-red:#d32f2f;
@@ -63,40 +63,81 @@
     min-height:1.2em;
   }
 
-  /* System carousel */
+  /* System carousel - now scrollable */
   #menu{
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    gap:54px;
-    padding:18px;
     height:58vh;
-    overflow:hidden;
+    overflow-x:auto;
+    overflow-y:hidden;
+    padding:18px;
+    display:flex;
+    align-items:center;
+    justify-content:center; /* Add this line */
   }
 
-  .system-tile{
-    width:180px;
-    height:180px;
-    background:var(--panel);
-    border:3px solid var(--muted);
-    border-radius:12px;
+  /* Container for all system tiles */
+  #menu .systems-container{
     display:flex;
-    justify-content:center;
-    align-items:center;
-    font-size:.9rem;
-    text-align:center;
-    padding:10px;
-    color:#ccc;
-    cursor:pointer;
-    transition:transform .22s, border-color .22s, box-shadow .22s, color .22s;
-    user-select:none;
+    gap:24px;
+    padding:0 20px;
+    min-width:max-content;
+
   }
+
+.system-tile {
+  flex-shrink: 0;
+  width: 180px;
+  height: 100px; /* give more vertical room */
+  background: var(--panel);
+  border: 3px solid var(--muted);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column; /* stack items vertically */
+  justify-content: center;
+  align-items: center;
+  font-size: .9rem;
+  text-align: center;
+  padding: 10px;
+  color: #ccc;
+  cursor: pointer;
+  transition: transform .22s, border-color .22s, box-shadow .22s, color .22s;
+  user-select: none;
+  margin-left: 10px;
+}
+
+.system-image {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  filter: brightness(0.7);
+  transition: filter .22s;
+  margin-bottom: 6px; /* space between image and title */
+}
+
+.system-name {
+  font-size: .75rem;
+  line-height: 1.1;
+}
+
+.system-tile.selected .system-image,
+.system-tile:hover .system-image{
+  filter:brightness(1);
+}
   .system-tile.selected,
   .system-tile:hover{
     transform:scale(1.22);
     border-color:var(--retro-red);
     box-shadow:0 0 28px var(--retro-red);
     color:#fff;
+  }
+
+  /* Hide scrollbar while keeping scroll functionality */
+  #menu::-webkit-scrollbar{
+    display:none;
+  }
+
+  #menu{
+    scrollbar-width:none; /* Firefox */
+    -ms-overflow-style:none; /* Internet Explorer 10+ */
   }
 
   /* Overlay */

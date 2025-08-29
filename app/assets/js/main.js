@@ -64,12 +64,31 @@ async function loadFileFromURLParam() {
 
     messageDiv.textContent = "← → (or D-pad left/right) to choose a system, Enter/A to open.";
     menuDiv.innerHTML = "";
+    
+    // Create systems container
+    const systemsContainer = el("div", { className: "systems-container" });
+    
     systems.forEach((sys, i) => {
-      const tile = el("div", { className: "system-tile", textContent: sys });
+      const systemData = romDataGlobal[sys];
+      const imageUrl = (Array.isArray(systemData) ? null : systemData?.sys_image) || 
+                      `images/systems/default.png`;
+      
+      const tile = el("div", { className: "system-tile" },
+        el("img", { 
+          className: "system-image", 
+          src: imageUrl,
+          alt: sys,
+          onerror: function() { this.src = 'images/systems/default.png'; }
+        }),
+        el("div", { className: "system-name", textContent: sys })
+      );
+      
       tile.addEventListener('click', () => { systemIndex = i; updateSystemSelection(); openRomOverlay(); });
       tile.addEventListener('mouseenter', () => { systemIndex = i; updateSystemSelection(); });
-      menuDiv.appendChild(tile);
+      systemsContainer.appendChild(tile);
     });
+    
+    menuDiv.appendChild(systemsContainer);
     updateSystemSelection();
   } catch (err) {
     console.error(err);
@@ -102,12 +121,31 @@ fileInput.addEventListener('change', async (ev) => {
 
     messageDiv.textContent = "← → (or D-pad left/right) to choose a system, Enter/A to open.";
     menuDiv.innerHTML = "";
+    
+    // Create systems container
+    const systemsContainer = el("div", { className: "systems-container" });
+    
     systems.forEach((sys, i) => {
-      const tile = el("div", { className:"system-tile", textContent: sys });
+      const systemData = romDataGlobal[sys];
+      const imageUrl = (Array.isArray(systemData) ? null : systemData?.sys_image) || 
+                      `images/systems/default.png`;
+      
+      const tile = el("div", { className: "system-tile" },
+        el("img", { 
+          className: "system-image", 
+          src: imageUrl,
+          alt: sys,
+          onerror: function() { this.src = 'images/systems/default.png'; }
+        }),
+        el("div", { className: "system-name", textContent: sys })
+      );
+      
       tile.addEventListener('click', () => { systemIndex = i; updateSystemSelection(); openRomOverlay(); });
       tile.addEventListener('mouseenter', () => { systemIndex = i; updateSystemSelection(); });
-      menuDiv.appendChild(tile);
+      systemsContainer.appendChild(tile);
     });
+    
+    menuDiv.appendChild(systemsContainer);
     updateSystemSelection();
   }catch(err){
     console.error(err);
@@ -130,7 +168,10 @@ function openRomOverlay(){
   const systemName = systems[systemIndex];
   overlaySystemName.textContent = systemName;
 
-  roms = romDataGlobal[systemName] || [];
+  // Handle both array and object format
+  const systemData = romDataGlobal[systemName];
+  roms = Array.isArray(systemData) ? systemData : (systemData?.roms || []);
+  
   romListDiv.innerHTML = "";
   romDetailDiv.innerHTML = '<div class="loading">Select a game to see details…</div>';
   metadataCache.clear(); // optional: clear when switching systems
