@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Retbro Generator</title>
+<title>Retbro Toolkit</title>
 <style>
   :root {
     --bg-color: #1e1e2f;
@@ -44,12 +44,13 @@
 
   button {
     cursor: pointer;
-    padding: 8px 12px;
+    padding: 6px 10px;
     border: none;
     border-radius: 5px;
     background-color: var(--accent-color);
     color: white;
     transition: 0.2s;
+    font-size: 12px;
   }
 
   button:hover {
@@ -82,6 +83,19 @@
     background: var(--hover-color);
   }
 
+  .system-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .system-title img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    border-radius: 4px;
+  }
+
   .links-list {
     list-style: none;
     padding: 0 20px 12px 20px;
@@ -111,6 +125,12 @@
   .file-input {
     display: none;
   }
+
+  .icon-btn {
+    font-size: 10px;
+    padding: 4px 6px;
+    margin-left: 3px;
+  }
 </style>
 </head>
 <body>
@@ -122,7 +142,9 @@
   <button onclick="addSystem()">+ Add System</button>
   <button onclick="exportJSON()">Export .retbrorl</button>
   <button onclick="document.getElementById('fileInput').click()">Import .retbrorl</button>
-  <input type="file" id="fileInput" class="file-input" accept=".retbrorl" onchange="importJSON(event)">
+  <input type="file" id="fileInput" class="file-input" accept=".retbrorl,.json" onchange="importJSON(event)">
+  <button onclick="document.getElementById('oldFileInput').click()">Convert v1.x (Old Format) to v2+</button>
+  <input type="file" id="oldFileInput" class="file-input" accept=".json,.retbrorl" onchange="importOldFormat(event)">
 </div>
 
 <div id="systemsContainer"></div>
@@ -143,6 +165,7 @@ function addSystem() {
 
 // Edit system name
 function editSystemName(oldName) {
+  if (oldName === "Retbro") return alert("You cannot rename the Retbro system!");
   const newName = prompt("Enter new name for system:", oldName);
   if (!newName) return;
   if (systems[newName] && newName !== oldName) return alert("System name already exists!");
@@ -151,12 +174,13 @@ function editSystemName(oldName) {
   renderSystems();
 }
 
-// Set system image
-function setSystemImage(systemName) {
-  const url = prompt("Enter image URL for " + systemName + ":", systems[systemName].sys_image);
-  if (url === null) return;
-  systems[systemName].sys_image = url;
-  renderSystems();
+// Remove system
+function removeSystem(systemName) {
+  if (systemName === "Retbro") return alert("You cannot remove the Retbro system!");
+  if (confirm(`Are you sure you want to remove ${systemName}?`)) {
+    delete systems[systemName];
+    renderSystems();
+  }
 }
 
 // Add ROM
@@ -200,20 +224,24 @@ function renderSystems() {
 
     card.innerHTML = `
       <div class="system-header" onclick="toggleSystem('${systemName}')">
-        <h2>${systemName}</h2>
+        <div class="system-title">
+          ${sysData.sys_image ? `<img src="${sysData.sys_image}" alt="icon">` : ''}
+          <h2>${systemName}</h2>
+        </div>
         <div>
-          <button onclick="event.stopPropagation(); addLink('${systemName}')">+ Add ROM</button>
-          <button onclick="event.stopPropagation(); setSystemImage('${systemName}')">Set Image</button>
-          <button onclick="event.stopPropagation(); editSystemName('${systemName}')">Edit Name</button>
+          <button class="icon-btn" onclick="event.stopPropagation(); addLink('${systemName}')">＋</button>
+          ${systemName !== "Retbro" ? `
+            <button class="icon-btn" onclick="event.stopPropagation(); editSystemName('${systemName}')">✎</button>
+            <button class="icon-btn" onclick="event.stopPropagation(); removeSystem('${systemName}')">🗑</button>
+          ` : ''}
         </div>
       </div>
-      ${sysData.sys_image ? `<img src="${sysData.sys_image}" alt="${systemName}" style="max-width:100%; display:block; margin:auto;">` : ''}
       <ul class="links-list" id="links-${systemName}">
         ${sysData.roms.map((link, i) => `
           <li>
             <a href="${link}" target="_blank">${link}</a>
-            <button onclick="event.stopPropagation(); editLink('${systemName}', ${i})">Edit</button>
-            <button onclick="event.stopPropagation(); removeLink('${systemName}', ${i})">Delete</button>
+            <button class="icon-btn" onclick="event.stopPropagation(); editLink('${systemName}', ${i})">✎</button>
+            <button class="icon-btn" onclick="event.stopPropagation(); removeLink('${systemName}', ${i})">🗑</button>
           </li>
         `).join('')}
       </ul>
@@ -224,21 +252,21 @@ function renderSystems() {
 }
 
 // Export JSON
-function exportJSON() {
+function exportJSON(filename = 'roms.retbrorl') {
   const dataStr = JSON.stringify(systems, null, 2);
   const blob = new Blob([dataStr], { type: "application/json" });
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'roms.retbrorl';
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
-// Import JSON
+// Import JSON (new format)
 function importJSON(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -247,6 +275,13 @@ function importJSON(event) {
   reader.onload = function(e) {
     try {
       const importedData = JSON.parse(e.target.result);
+      let valid = true;
+      for (const k in importedData) {
+        const v = importedData[k];
+        if (typeof v !== 'object' || !Array.isArray(v.roms)) { valid = false; break; }
+      }
+      if (!valid) return alert('Imported file is not in the new format. Use the "Import (old format)" button for older files.');
+
       systems = importedData;
       renderSystems();
     } catch (err) {
@@ -256,16 +291,128 @@ function importJSON(event) {
   reader.readAsText(file);
 }
 
-// Example
-systems = {
-  "Nintendo Entertainment System": {
-    sys_image: "https://example.com/nes-image.png",
-    roms: ["rom1.nes", "rom2.nes"]
-  },
-  "Super Nintendo": {
-    sys_image: "https://example.com/snes-image.png",
-    roms: ["rom1.smc", "rom2.smc"]
+// Import old format and transform
+function importOldFormat(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const oldData = JSON.parse(e.target.result);
+      const transformed = transformOldToNew(oldData);
+      systems = { ...systems, ...transformed };
+      renderSystems();
+      const saveName = file.name.replace(/\.(json|retbrorl)$/i, '') + '.retbrorl';
+      exportJSON(saveName);
+      alert('Imported old-format file, transformed to new format, and exported as "' + saveName + '"');
+    } catch (err) {
+      alert("Invalid file or JSON parsing error: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Transformation function: old -> new
+function transformOldToNew(oldObj) {
+  const out = {};
+  for (const systemName in oldObj) {
+    const entry = oldObj[systemName];
+    if (entry && typeof entry === 'object' && Array.isArray(entry.roms)) {
+      out[systemName] = entry;
+      continue;
+    }
+    if (Array.isArray(entry)) {
+      out[systemName] = { sys_image: "", roms: entry.slice() };
+    } else {
+      out[systemName] = { sys_image: "", roms: [] };
+      if (typeof entry === 'string') out[systemName].roms.push(entry);
+    }
   }
+  return out;
+}
+
+// Example placeholder system
+systems["Retbro"] = {
+  sys_image: "https://retbro.optb.qzz.io/app/assets/systems/retbro.png",
+  roms: [
+    "-------------------------------------------------",
+    "About Your Current Retbro Romlist",
+    "-------------------------------------------------",
+    "Author: My Awesome Name",
+    "Website: https://YOUR.WEBSITE.OR.GITHUB.PAGES.SITE",
+    "Name: My Awesome List",
+    "Description: An Awesome List Made By My Awesome",
+    "Name With My Awesome And Name",
+    "Safari Support: [True]/False",
+    "Chromium Support: [True]/False",
+    "Recommended Browser: Chromium-Based",
+    "Retbro App Support: [True]/False",
+    "iOS Support: True/False/[Partial]",
+    "Android Support: True/False/[Partial]",
+    "Tablet Support: True/False/Partial/[Controller OR Keyboard Required]",
+    "Phone Support: True/False/[Partial]/Controller OR Keyboard Required",
+    "ROM Sources: NONE (Yet)",
+    "Legal: True",
+    "-------------------------------------------------",
+        "Controls",
+    "-------------------------------------------------",
+    "ESC: Go Back",
+    "Enter: Select It",
+    "Arrow Keys: Navigate",
+    "-------------------------------------------------",
+    "Controls (In Game)",
+    "-------------------------------------------------",
+    "Press the controller button in game to view all controls",
+    "Enter: Pause/Play",
+    "Arrow Keys: Move",
+    "-------------------------------------------------",
+    "About",
+    "-------------------------------------------------",
+    "This full Retbro song list was provided to you.",
+    "The author of this would not like this to be",
+    "Redistrubited so please share the website link",
+    "instead of the file.",
+    "Powered By EmulatorJS",
+    "Press The Credits Button In Footer For RetBro Credits",
+    "-------------------------------------------------",
+    "Systems (Supported)",
+    "-------------------------------------------------",
+    "NES",
+    "SNES",
+    "GameBoy",
+    "GameBoy Colour",
+    "Virtual Boy",
+    "Nintendo DS",
+    "Atari 5200",
+    "Mame 2003",
+    "Arcade",
+    "Playstation",
+    "Atari Jaguar",
+    "Atari Lynx",
+    "Sega Saturn",
+    "Sega Megadrive",
+    "Sega Game Gear",
+    "Sega CD",
+    "Nintendo 64",
+    "3do",
+    "Atari 7800",
+    "Atari 2600",
+    "Sega 32x",
+    "Sega MasterSystem",
+    "Commodore 64",
+    "Commodore 128",
+    "Commodore Pet",
+    "Commodore Plus 4",
+    "Commodore Vic20",
+    "Commodore Amiga",
+    "Colecovision",
+    "TurboGrafx 16 (PCE)",
+    "pcfx core",
+    "ngp core",
+    "ws core",
+    "PlayStation Portable (NO SAFARI)"
+  ]
 };
 
 renderSystems();
