@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROM Link Manager</title>
+<style>
+  :root {
+    --bg-color: #1e1e2f;
+    --card-color: #2c2c3c;
+    --text-color: #f0f0f0;
+    --accent-color: #4f9dff;
+    --hover-color: #3a3a50;
+  }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .top-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  input[type=text] {
+    padding: 8px;
+    border-radius: 5px;
+    border: none;
+    width: 200px;
+    outline: none;
+  }
+
+  button {
+    cursor: pointer;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    background-color: var(--accent-color);
+    color: white;
+    transition: 0.2s;
+  }
+
+  button:hover {
+    background-color: #357edb;
+  }
+
+  #systemsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .system-card {
+    background: var(--card-color);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: 0.3s;
+  }
+
+  .system-header {
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .system-header:hover {
+    background: var(--hover-color);
+  }
+
+  .links-list {
+    list-style: none;
+    padding: 0 20px 12px 20px;
+    margin: 0;
+    display: none;
+  }
+
+  .links-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    gap: 5px;
+  }
+
+  .links-list a {
+    color: var(--accent-color);
+    text-decoration: none;
+    word-break: break-all;
+    flex: 1;
+  }
+
+  .links-list a:hover {
+    text-decoration: underline;
+  }
+
+  .file-input {
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<h1>Retbro retbrorl generator</h1>
+
+<div class="top-bar">
+  <input type="text" id="newSystemName" placeholder="Enter system name">
+  <button onclick="addSystem()">+ Add System</button>
+  <button onclick="exportJSON()">Export .retbrorl</button>
+  <button onclick="document.getElementById('fileInput').click()">Import .retbrorl</button>
+  <input type="file" id="fileInput" class="file-input" accept=".retbrorl" onchange="importJSON(event)">
+</div>
+
+<div id="systemsContainer"></div>
+
+<script>
+let systems = {};
+
+// Add system
+function addSystem() {
+  const systemName = document.getElementById('newSystemName').value.trim();
+  if (!systemName) return alert("Please enter a system name!");
+  if (systems[systemName]) return alert("System already exists!");
+  
+  systems[systemName] = [];
+  document.getElementById('newSystemName').value = '';
+  renderSystems();
+}
+
+// Edit system name
+function editSystemName(oldName) {
+  const newName = prompt("Enter new name for system:", oldName);
+  if (!newName) return;
+  if (systems[newName] && newName !== oldName) return alert("System name already exists!");
+  systems[newName] = systems[oldName];
+  delete systems[oldName];
+  renderSystems();
+}
+
+// Add link
+function addLink(systemName) {
+  const url = prompt("Enter download link for " + systemName + ":");
+  if (!url) return;
+  systems[systemName].push(url);
+  renderSystems();
+}
+
+// Edit link
+function editLink(systemName, index) {
+  const newUrl = prompt("Edit download link for " + systemName + ":", systems[systemName][index]);
+  if (!newUrl) return;
+  systems[systemName][index] = newUrl;
+  renderSystems();
+}
+
+// Remove link
+function removeLink(systemName, index) {
+  systems[systemName].splice(index, 1);
+  renderSystems();
+}
+
+// Toggle dropdown
+function toggleSystem(systemName) {
+  const list = document.getElementById('links-' + systemName);
+  list.style.display = list.style.display === 'block' ? 'none' : 'block';
+}
+
+// Render all systems
+function renderSystems() {
+  const container = document.getElementById('systemsContainer');
+  container.innerHTML = '';
+  
+  for (const systemName in systems) {
+    const card = document.createElement('div');
+    card.className = 'system-card';
+    
+    card.innerHTML = `
+      <div class="system-header" onclick="toggleSystem('${systemName}')">
+        <h2>${systemName}</h2>
+        <div>
+          <button onclick="event.stopPropagation(); addLink('${systemName}')">+ Add Link</button>
+          <button onclick="event.stopPropagation(); editSystemName('${systemName}')">Edit Name</button>
+        </div>
+      </div>
+      <ul class="links-list" id="links-${systemName}">
+        ${systems[systemName].map((link, i) => `
+          <li>
+            <a href="${link}" target="_blank">${link}</a>
+            <button onclick="event.stopPropagation(); editLink('${systemName}', ${i})">Edit</button>
+            <button onclick="event.stopPropagation(); removeLink('${systemName}', ${i})">Delete</button>
+          </li>
+        `).join('')}
+      </ul>
+    `;
+    
+    container.appendChild(card);
+  }
+}
+
+// Export JSON
+function exportJSON() {
+  const dataStr = JSON.stringify(systems, null, 2);
+  const blob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'roms.retbrorl';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Import JSON
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const importedData = JSON.parse(e.target.result);
+      systems = importedData;
+      renderSystems();
+    } catch (err) {
+      alert("Invalid .retbrorl file!");
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Initialize example system with your full placeholder text
+systems["Retbro"] = [
+    "-------------------------------------------------",
+    "About Your Current Retbro Romlist",
+    "-------------------------------------------------",
+    "Author: My Awesome Name",
+    "Website: https://YOUR.WEBSITE.OR.GITHUB.PAGES.SITE",
+    "Name: My Awesome List",
+    "Description: An Awesome List Made By My Awesome",
+    "Name With My Awesome And Name",
+    "Safari Support: [True]/False",
+    "Chromium Support: [True]/False",
+    "Recommended Browser: Chromium-Based",
+    "Retbro App Support: [True]/False",
+    "iOS Support: True/False/[Partial]",
+    "Android Support: True/False/[Partial]",
+    "Tablet Support: True/False/Partial/[Controller OR Keyboard Required]",
+    "Phone Support: True/False/[Partial]/Controller OR Keyboard Required",
+    "ROM Sources: NONE (Yet)",
+    "Legal: True",
+    "-------------------------------------------------",
+        "Controls",
+    "-------------------------------------------------",
+    "ESC: Go Back",
+    "Enter: Select It",
+    "Arrow Keys: Navigate",
+    "-------------------------------------------------",
+    "Controls (In Game)",
+    "-------------------------------------------------",
+    "Press the controller button in game to view all controls",
+    "Enter: Pause/Play",
+    "Arrow Keys: Move",
+    "-------------------------------------------------",
+    "About",
+    "-------------------------------------------------",
+    "This full Retbro song list was provided to you.",
+    "The author of this would not like this to be",
+    "Redistrubited so please share the website link",
+    "instead of the file.",
+    "Powered By EmulatorJS",
+    "Press The Credits Button In Footer For RetBro Credits",
+    "-------------------------------------------------",
+    "Systems (Supported)",
+    "-------------------------------------------------",
+    "NES",
+    "SNES",
+    "GameBoy",
+    "GameBoy Colour",
+    "Virtual Boy",
+    "Nintendo DS",
+    "Atari 5200",
+    "Mame 2003",
+    "Arcade",
+    "Playstation",
+    "Atari Jaguar",
+    "Atari Lynx",
+    "Sega Saturn",
+    "Sega Megadrive",
+    "Sega Game Gear",
+    "Sega CD",
+    "Nintendo 64",
+    "3do",
+    "Atari 7800",
+    "Atari 2600",
+    "Sega 32x",
+    "Sega MasterSystem",
+    "Commodore 64",
+    "Commodore 128",
+    "Commodore Pet",
+    "Commodore Plus 4",
+    "Commodore Vic20",
+    "Commodore Amiga",
+    "Colecovision",
+    "TurboGrafx 16 (PCE)",
+    "pcfx core",
+    "ngp core",
+    "ws core",
+    "PlayStation Portable (NO SAFARI)"
+];
+
+renderSystems();
+</script>
+
+</body>
+</html>
