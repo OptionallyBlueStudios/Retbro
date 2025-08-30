@@ -313,6 +313,16 @@ footer {
 </footer>
 
 <script>
+
+const q = new URLSearchParams(location.search);
+let betapass  = q.get("beta"); // 3575
+const betadef = true;
+
+if (betadef === true) {
+  betapass = 3575;
+}
+
+
 /* ---------- DOM ---------- */
 const fileInput = document.getElementById('fileInput');
 const menuDiv = document.getElementById('menu');
@@ -385,13 +395,15 @@ function buildSystemTiles(){
   updateSystemSelection();
 }
 
-/* ---------- Update system selection ---------- */
-function updateSystemSelection(){
+/* ---------- Update system selection (optionally skip scroll) ---------- */
+function updateSystemSelection(scroll = true){
   const tiles = document.querySelectorAll('.system-tile');
-  tiles.forEach(t=>t.classList.remove('selected'));
-  if(tiles[systemIndex]){
+  tiles.forEach(t => t.classList.remove('selected'));
+  if (tiles[systemIndex]){
     tiles[systemIndex].classList.add('selected');
-    tiles[systemIndex].scrollIntoView({behavior:"smooth", block:"nearest", inline:"center"});
+    if(scroll){
+      tiles[systemIndex].scrollIntoView({ behavior:"smooth", inline:"center", block:"nearest" });
+    }
   }
 }
 
@@ -486,7 +498,12 @@ searchInput.addEventListener('input', ()=>{
 
 /* ---------- Launch ---------- */
 function launchRomByUrl(url){
-  window.location.href=`emulator.html?rom=${encodeURIComponent(url)}`;
+  if (betapass == 3575) {
+    window.location.href=`beta-emulator.html?rom=${encodeURIComponent(url)}&prev=` + window.location;
+  } else {
+    window.location.href=`emulator.html?rom=${encodeURIComponent(url)}&prev=` + window.location;
+  }
+  
 }
 
 /* ---------- Keyboard ---------- */

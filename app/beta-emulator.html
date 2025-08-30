@@ -1,0 +1,122 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>EmulatorJS Loader (Auto Core)</title>
+    <style>
+      body, html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        background: #000;
+      }
+      #game {
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+      }
+
+      #backBtn span {
+        transform: translateY(-2px); /* move up 2px */
+      }
+
+      #backBtn {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        z-index: 9999;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgb(0, 186, 242);
+        color: white;
+        font-family: sans-serif;
+        font-size: 20px;
+        display: flex;
+        align-items: center;   /* vertical centering */
+        justify-content: center; /* horizontal centering */
+        cursor: pointer;
+        text-decoration: none;
+        user-select: none;
+        transition: background 0.2s;
+      }
+      #backBtn:hover {
+        background: rgba(255,255,255,0.25);
+      }
+
+    </style>
+</head>
+<body>
+  <a id="backBtn" href="index.html"><span>←</span></a>
+  <div id="game"></div>
+    <script>
+      const q = new URLSearchParams(location.search);
+      const rom  = q.get("rom");
+      const bios = q.get("bios");
+      const coreOverride = q.get("core");
+      const previousurl = q.get("prev");
+
+      if (previousurl) {
+        document.getElementById('backBtn').href = decodeURIComponent(previousurl);
+      }
+      function detectCore(url, bios) {
+        const filename = url.split("/").pop().toLowerCase();
+        const ext = filename.split("?")[0].split(".").pop();
+
+        if (["nes"].includes(ext)) return "fceumm";
+        if (["smc","sfc"].includes(ext)) return "snes9x";
+        if (["gb","gbc"].includes(ext)) return "gambatte";
+        if (["gba"].includes(ext)) return "mgba";
+        if (["vb"].includes(ext)) return "beetle_vb";
+        if (["nds","dsi"].includes(ext)) return "melonds";
+        if (["a52"].includes(ext)) return "a5200";
+        if (["zip","fba","mame"].includes(ext)) return "fbneo";
+        if (["j64","jag"].includes(ext)) return "virtualjaguar";
+        if (["lnx"].includes(ext)) return "handy";
+        if (["gen","md","smd","gg","sms","32x"].includes(ext)) return "genesis_plus_gx";
+        if (["z64","n64","v64"].includes(ext)) return "mupen64plus_next";
+        if (["a78"].includes(ext)) return "prosystem";
+        if (["a26"].includes(ext)) return "stella2014";
+        if (["col"].includes(ext)) return "gearcoleco";
+        if (["pce"].includes(ext)) return "mednafen_pce";
+        if (["pcfx"].includes(ext)) return "mednafen_pcfx";
+        if (["ngp","ngc"].includes(ext)) return "mednafen_ngp";
+        if (["ws","wsc"].includes(ext)) return "mednafen_wswan";
+        if (["iso","cso"].includes(ext) && filename.includes("psp")) return "ppsspp";
+
+        // Smarter CD-based detection
+        if (["cue","bin","iso","chd","img","pbp"].includes(ext)) {
+          if (bios && bios.toLowerCase().includes("scph")) return "pcsx_rearmed"; // PS1
+          if (filename.includes("saturn") || filename.includes("sega")) return "yabause"; // Saturn
+          if (filename.includes("3do")) return "opera"; // 3DO
+          if (filename.includes("segacd") || filename.includes("sega_cd")) return "genesis_plus_gx"; // Sega CD
+          return "pcsx_rearmed"; // default to PS1
+        }
+        return null;
+      }
+
+      if (!rom) {
+        document.body.innerHTML =
+          "<p style='color:white;font-family:sans-serif;padding:20px'>" +
+          "Missing ?rom= URL<br>Example:<br>" +
+          "<code>?rom=https://example.com/roms/Mario.smc</code></p>";
+      } else {
+        const autoCore = detectCore(rom, bios);
+        const core = coreOverride || autoCore;
+
+        // EmulatorJS globals
+        EJS_player = "#game";
+        EJS_gameUrl = rom;
+        if (bios) EJS_biosUrl = bios;
+        if (core) EJS_core = core;
+        EJS_pathtodata = "https://cdn.emulatorjs.org/stable/data/";
+        EJS_startOnLoaded = true; // auto start
+
+        const s = document.createElement("script");
+        s.src = "https://cdn.emulatorjs.org/stable/data/loader.js";
+        document.body.appendChild(s);
+      }
+    </script>
+</body>
+</html>
