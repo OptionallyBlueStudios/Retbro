@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetBro - Play Retro Games in Your Browser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .scanlines {
+            display: none;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            text-align: center;
+        }
+
+        .glitch {
+            font-size: clamp(3rem, 8vw, 8rem);
+            font-weight: 700;
+            text-transform: uppercase;
+            position: relative;
+            color: #ffffff;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            100% { transform: translate(0); }
+        }
+
+        .subtitle {
+            font-size: clamp(1.2rem, 3vw, 2rem);
+            margin: 20px 0 40px;
+            opacity: 0.9;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 15px 40px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-button:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+
+        .cta-button::before {
+            display: none;
+        }
+
+        .features {
+            padding: 80px 0;
+            background: #111111;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 60px;
+        }
+
+        .feature-card {
+            background: #1a1a1a;
+            border: 1px solid #333333;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .feature-card::before {
+            display: none;
+        }
+
+        .feature-card:hover {
+            background: #222222;
+            border-color: #444444;
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .feature-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #ffffff;
+        }
+
+        .feature-desc {
+            color: #cccccc;
+            line-height: 1.6;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
+
+        .footer {
+            background: #111111;
+            padding: 40px 0;
+            text-align: center;
+            border-top: 1px solid #333333;
+        }
+
+        .footer-links {
+            margin-top: 20px;
+        }
+
+        .footer-link {
+            color: #2563eb;
+            text-decoration: none;
+            margin: 0 15px;
+            transition: all 0.2s ease;
+        }
+
+        .footer-link:hover {
+            color: #1d4ed8;
+        }
+
+        .floating-shapes {
+            display: none;
+        }
+
+        .shape {
+            position: absolute;
+            opacity: 0.1;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shape:nth-child(1) {
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .shape:nth-child(2) {
+            top: 60%;
+            right: 10%;
+            animation-delay: 2s;
+        }
+
+        .shape:nth-child(3) {
+            bottom: 20%;
+            left: 20%;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 20px 0;
+            }
+            
+            .cta-button {
+                padding: 12px 30px;
+                font-size: 1.2rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="scanlines"></div>
+    
+    <div class="floating-shapes">
+        <div class="shape" style="width: 60px; height: 60px; background: linear-gradient(45deg, #00ff41, #667eea); border-radius: 50%;"></div>
+        <div class="shape" style="width: 40px; height: 40px; background: linear-gradient(45deg, #ff6b35, #f7931e); transform: rotate(45deg);"></div>
+        <div class="shape" style="width: 80px; height: 80px; background: linear-gradient(45deg, #667eea, #764ba2); clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>
+    </div>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1 class="glitch">Retbro CL</h1>
+                <p class="subtitle">A Retbro list made for the community, by the community</p>
+                <a href="https://retbro.optb.qzz.io/app/?retbrorl=https://retbro.optb.qzz.io/demo/cl.retbrorl" class="cta-button">Play now!</a>
+                <p>By pressing "Play Now", you agree to the <a href="https://github.com/OptionallyBlueStudios/Retbro/tree/main/Terms-And-Conditions.md" class="footer-link" style="margin-left: 0;">Terms and Conditions</a></p>
+            </div>
+        </section>
+
+        <section class="features">
+            <div class="container">
+                
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🌐</div>
+                        <h3 class="feature-title">Made by the community</h3>
+                        <p class="feature-desc">Made for the community, by the community (and devs).</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">⚖️</div>
+                        <h3 class="feature-title">100% Legal Roms</h3>
+                        <p class="feature-desc">All ROMs are legal</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">📜</div>
+                        <h3 class="feature-title">Curated list</h3>
+                        <p class="feature-desc">Many ROMs are on this list.</p>
+                    </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+                <a href="https://retbro.optb.qzz.io/app" class="footer-link">Launch App</a>
+                <a href="https://retbro.optb.qzz.io/app/credits.txt" class="footer-link">Credits</a>
+                <a href="#" class="footer-link">GitHub</a>
+                <a href="https://github.com/OptionallyBlueStudios/Retbro/tree/main/Terms-And-Conditions.md" class="footer-link">Terms and Conditions</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Add some simple hover effects
+        const featureCards = document.querySelectorAll('.feature-card');
+        featureCards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-4px)';
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body>
+</html>
