@@ -2,7 +2,7 @@
   // === CONFIGURE THESE ===
   const repoOwner = 'OptionallyBlueStudios';  // Replace with your repo owner
   const repoName = 'Retbro';         // Replace with your repo name
-  const failUrl = 'https://rebtro.optb.qzz.io/login'; // Redirect here if not logged in
+  const failUrl = 'https://retbro.optb.qzz.io/login'; // Redirect here if not logged in
 
   // === HELPER: read cookie by name ===
   function getCookie(name) {
