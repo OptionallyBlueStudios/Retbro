@@ -149,6 +149,8 @@ const loginBtn = document.getElementById('loginBtn');
 const spinner = document.getElementById('spinner');
 const loginBox = document.getElementById('loginBox');
 const usernameInput = document.getElementById('username');
+const q = new URLSearchParams(location.search);
+const goto  = q.get("goto");
 
 loginBtn.addEventListener('click', async () => {
   const username = usernameInput.value.trim();
@@ -158,8 +160,8 @@ loginBtn.addEventListener('click', async () => {
   loginBtn.disabled = true;
 
   const repoOwner = 'OptionallyBlueStudios'; // replace with your GitHub username
-  const repoName = 'Retbro';        // replace with your repo name
-  const redirectUrl = 'https://retbro.optb.qzz.io/app'; // replace with your URL
+  const repoName = 'Retbro';                 // replace with your repo name
+  const fallbackUrl = 'https://retbro.optb.qzz.io/app'; // default redirect
 
   try {
     // 1. Check forks
@@ -184,7 +186,9 @@ loginBtn.addEventListener('click', async () => {
       loginBox.style.opacity = 0;
 
       setTimeout(() => {
-        window.location.href = redirectUrl;
+        // Use ?goto if present, otherwise fallback
+        const targetUrl = goto ? decodeURIComponent(goto) : fallbackUrl;
+        window.location.href = targetUrl;
       }, 500);
     } else {
       // Shake input and button
