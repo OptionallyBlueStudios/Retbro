@@ -8,3 +8,4 @@ A EmulatorJS Browser Based Full Retro Emulator Project
 - A UI To select roms
 - A Full Emulator
 - Cheats
+- More stuff
