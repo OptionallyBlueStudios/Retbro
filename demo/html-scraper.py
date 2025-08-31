@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import messagebox, filedialog
 
 # Allowed ROM extensions
-ROM_EXTENSIONS = (".gg", ".nes", ".snes", ".gba", ".gb", ".gbc", ".sms", ".smd", ".bin", ".a78")
+ROM_EXTENSIONS = (".gg", ".nes", ".snes", ".gba", ".gb", ".gbc", ".sms", ".smd", ".bin", ".a78", ".lnx")
 
 def extract_rom_urls(url: str):
     try:
