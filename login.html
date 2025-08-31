@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retbro | Login</title>
+<style>
+  body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #0a0a0a;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .login-box {
+    background-color: #1c1c1c;
+    padding: 50px 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    width: 360px;
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    position: relative;
+    transition: opacity 0.5s ease;
+  }
+
+  .login-box h1 {
+    margin-bottom: 16px;
+    font-size: 24px;
+    font-weight: 600;
+    color: #ffffff;
+    align-self: flex-start;
+  }
+
+  .login-box p {
+    font-size: 14px;
+    color: #aaaaaa;
+    margin-bottom: 32px;
+    line-height: 1.5;
+    align-self: flex-start;
+  }
+
+  .login-box input[type="text"], 
+  .login-box input[type="submit"] {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    border: none;
+    outline: none;
+    box-sizing: border-box;
+  }
+
+  .login-box input[type="text"] {
+    background-color: #2c2c2c;
+    color: #ffffff;
+    text-align: center;
+  }
+
+  .login-box input[type="text"]::placeholder {
+    color: #888888;
+    text-align: center;
+  }
+
+  .login-box input[type="text"]:focus {
+    border: 1px solid #ffffff;
+  }
+
+  .login-box input[type="submit"] {
+    background-color: #ffffff;
+    color: #000000;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  .login-box input[type="submit"]:hover {
+    background-color: #e0e0e0;
+  }
+
+  a {
+    display: block;
+    margin-top: 16px;
+    font-size: 12px;
+    color: #888888;
+    text-decoration: none;
+    text-align: center;
+    width: 100%;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* Spinner */
+  .spinner {
+    border: 4px solid rgba(255,255,255,0.2);
+    border-top: 4px solid #ffffff;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+  }
+
+  @keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+
+  /* Shake animation */
+  @keyframes shake {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-8px); }
+    80% { transform: translateX(8px); }
+    100% { transform: translateX(0); }
+  }
+
+  .shake {
+    animation: shake 0.4s;
+  }
+</style>
+</head>
+<body>
+<div class="login-box" id="loginBox">
+  <h1>Retbro Login</h1>
+  <p>Retbro is currently supporters only. To get access, fork the repo or be a contributor, then enter your GitHub username below.</p>
+  <input type="text" id="username" placeholder="MyAwesomeUsername327">
+  <input type="submit" id="loginBtn" value="Login">
+  <a href="#">By pressing submit, you agree that we will add a login cookie to your cookies.</a>
+  <div class="spinner" id="spinner"></div>
+</div>
+
+<script>
+const loginBtn = document.getElementById('loginBtn');
+const spinner = document.getElementById('spinner');
+const loginBox = document.getElementById('loginBox');
+const usernameInput = document.getElementById('username');
+
+loginBtn.addEventListener('click', async () => {
+  const username = usernameInput.value.trim();
+  if (!username) return;
+
+  spinner.style.display = 'block';
+  loginBtn.disabled = true;
+
+  const repoOwner = 'OptionallyBlueStudios'; // replace with your GitHub username
+  const repoName = 'Retbro';        // replace with your repo name
+  const redirectUrl = 'https://retbro.optb.qzz.io/app'; // replace with your URL
+
+  try {
+    // 1. Check forks
+    const forkResponse = await fetch(`https://api.github.com/users/${username}/repos`);
+    const userRepos = await forkResponse.json();
+    const hasForked = userRepos.some(r => r.fork && r.full_name === `${username}/${repoName}`);
+
+    // 2. Check contributors
+    const contribResponse = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contributors`);
+    const contributors = await contribResponse.json();
+    const isContributor = contributors.some(c => c.login.toLowerCase() === username.toLowerCase());
+
+    spinner.style.display = 'none';
+    loginBtn.disabled = false;
+
+    if (hasForked || isContributor) {
+      // Set login cookie
+      document.cookie = `retbro_username=${username}; path=/; max-age=86400`;
+
+      // Fade out
+      loginBox.style.transition = 'opacity 0.5s';
+      loginBox.style.opacity = 0;
+
+      setTimeout(() => {
+        window.location.href = redirectUrl;
+      }, 500);
+    } else {
+      // Shake input and button
+      usernameInput.classList.add('shake');
+      loginBtn.classList.add('shake');
+      setTimeout(() => {
+        usernameInput.classList.remove('shake');
+        loginBtn.classList.remove('shake');
+      }, 400);
+    }
+
+  } catch (err) {
+    spinner.style.display = 'none';
+    loginBtn.disabled = false;
+    console.error(err);
+    // Shake input and button on error
+    usernameInput.classList.add('shake');
+    loginBtn.classList.add('shake');
+    setTimeout(() => {
+      usernameInput.classList.remove('shake');
+      loginBtn.classList.remove('shake');
+    }, 400);
+  }
+});
+</script>
+</body>
+</html>
