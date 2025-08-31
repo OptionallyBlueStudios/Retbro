@@ -1,3 +1,5 @@
+// Newer script embedded into index.html
+
 /* ---------- DOM ---------- */
 const fileInput         = document.getElementById('fileInput');
 const menuDiv           = document.getElementById('menu');
@@ -378,84 +380,66 @@ function pollGamepad(){
 }
 pollGamepad();
 
-/* ---------- ScreenScraper API (no key) + Picsum fallback ---------- */
-async function fetchGameInfo(displayName){
-  // Build a smart lookup title to improve matches
-  const cleanDisplay = decodeName(displayName);
-  const lookup = toLookupTitle(cleanDisplay);
+/* ---------- FreeToGame API (no key) + Picsum fallback ---------- */
+let freeToGameCache = null;
 
-  // Compose URL with demo creds (public)
-  const url = `https://www.screenscraper.fr/api2/jeuInfos.php?devid=demo&devpassword=demo&softname=demo&output=json&romnom=${encodeURIComponent(lookup)}`;
+async function fetchGameInfo(displayName){
+  // Step 1: normalize name
+  const cleanDisplay = decodeName(displayName);
+
+  // Strip everything before the last "/" if it exists
+  const shortName = cleanDisplay.includes("/") 
+      ? cleanDisplay.split("/").pop() 
+      : cleanDisplay;
+
+  // Strip region/rev junk for lookup
+  const lookup = toLookupTitle(shortName);
 
   try{
-    const res = await fetch(url, { method:"GET" });
-    // If CORS blocks or network fails, fall through to catch
-    const json = await res.json();
+    // Step 2: load FreeToGame database if not cached
+    if (!freeToGameCache){
+      const res = await fetch("https://www.freetogame.com/api/games");
+      freeToGameCache = await res.json();
+    }
 
-    // The API may return an object or array; normalize:
-    let game = json?.response?.jeu;
-    if (Array.isArray(game)) game = game[0];
-
-    if (!game) throw new Error("No game data");
-
-    // medias can be 'medias' (array) or 'media' (array/object)
-    let medias = game.medias ?? game.media ?? [];
-    if (!Array.isArray(medias) && medias) medias = [medias];
-
-    const getMediaUrl = (types) => {
-      if (!Array.isArray(medias)) return "";
-      const found = medias.find(m =>
-        typeof m?.type === "string" &&
-        types.some(t => m.type.toLowerCase().includes(t))
+    // Step 3: find closest match
+    let game = freeToGameCache.find(g => 
+      g.title.toLowerCase() === lookup.toLowerCase()
+    );
+    if (!game){
+      game = freeToGameCache.find(g => 
+        g.title.toLowerCase().includes(lookup.toLowerCase())
       );
-      return found?.url || "";
-    };
-
-    const cover =
-      getMediaUrl(["box-2d","box","boxart","cover","2d"]) ||
-      `https://picsum.photos/300/420?random=${encodeURIComponent(lookup)}`;
-
-    // screenshots: try a few common tags
-    const shots = (Array.isArray(medias) ? medias : [])
-      .filter(m => typeof m?.type === "string" && /screen|screenshot|title|in-game|ingame/.test(m.type.toLowerCase()))
-      .map(m => m.url)
-      .filter(Boolean);
-
-    // genres can be array of objects or a string
-    let genres = [];
-    if (Array.isArray(game.genres)) {
-      genres = game.genres.map(g => g?.nom || g?.name).filter(Boolean);
-    } else if (typeof game.genre === "string") {
-      genres = [game.genre];
     }
 
+    // Step 4: if found, fetch full detail
+    let detail = {};
+    if (game){
+      const res = await fetch(`https://www.freetogame.com/api/game?id=${game.id}`);
+      detail = await res.json();
+    }
+
+    // Step 5: build info object
     const info = {
-      name: game.nom || cleanDisplay,
-      desc: game.synopsis || game.overview || "No description available.",
-      cover,
-      screenshots: shots,
-      system: game.systeme?.nom || game.system?.name || "",
-      genres,
-      genre: genres[0] || "",
-      dev: game.developpeur?.nom || game.developer?.name || "",
-      publisher: game.editeur?.nom || game.publisher?.name || "",
-      players: game.joueurs?.text || game.players || "",
-      year: game.annee || game.year || ""
+      name: detail.title || shortName,
+      desc: detail.description || detail.short_description || "No description available.",
+      cover: detail.thumbnail || `https://picsum.photos/300/420?random=${encodeURIComponent(lookup)}`,
+      screenshots: detail.screenshots?.map(s => s.image) || [],
+      system: detail.platform || "Unknown",
+      genres: detail.genre ? [detail.genre] : [],
+      genre: detail.genre || "Unknown",
+      dev: detail.developer || "Unknown",
+      publisher: detail.publisher || "Unknown",
+      players: detail.multiplayer || "Unknown",
+      year: detail.release_date?.split("-")[0] || "Unknown"
     };
-
-    // Fill unknowns with sane defaults
-    for (const k of ["system","dev","publisher","players","year"]){
-      if (!info[k]) info[k] = "Unknown";
-    }
-    if (!info.genres?.length && !info.genre) info.genre = "Unknown";
 
     return info;
 
   }catch(err){
-    console.warn("ScreenScraper lookup failed:", err);
-    // Fallback
+    console.warn("FreeToGame lookup failed:", err);
     return {
-      name: cleanDisplay,
+      name: shortName,
       desc: "No info found.",
       cover: `https://picsum.photos/300/420?random=${encodeURIComponent(lookup)}`,
       screenshots: [],
