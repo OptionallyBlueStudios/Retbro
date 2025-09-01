@@ -213,13 +213,10 @@
     </style>
 </head>
 <body>
+    <div id="announcement-banner" style="background: linear-gradient(90deg, #ff5252, #ff7b00); color: white; padding: 1rem 2rem; font-family: system-ui, sans-serif; font-size: 1rem; font-weight: 600; text-align: center; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <span>🚨 IMPORTANT: We are changing our ROM format to include metadata. You can convert v2 to v3 format in the <a href="generator.html">generator</a></span>
+        <button onclick="this.parentElement.style.display='none'" aria-label="Close" style="background: transparent; border: none; color: white; font-size: 1.5rem; cursor: pointer; margin-left: 1rem; transition: opacity 0.2s ease;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">&times;</button></div>
     <div class="scanlines"></div>
-    
-    <div class="floating-shapes">
-        <div class="shape" style="width: 60px; height: 60px; background: linear-gradient(45deg, #00ff41, #667eea); border-radius: 50%;"></div>
-        <div class="shape" style="width: 40px; height: 40px; background: linear-gradient(45deg, #ff6b35, #f7931e); transform: rotate(45deg);"></div>
-        <div class="shape" style="width: 80px; height: 80px; background: linear-gradient(45deg, #667eea, #764ba2); clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></div>
-    </div>
 
     <main>
         <section class="hero">

@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Retbro Menu</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root{
+  --retro-red:#d32f2f;
+  --bg:#111;
+  --panel:#1a1a1a;
+  --panel-2:#222;
+  --muted:#444;
+  --text:#fff;
+  --sub:#ccc;
+}
+
+*{ box-sizing:border-box }
+
+body{
+  font-family:'Press Start 2P', system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  background:#111;
+  color:var(--text);
+  margin:0;
+  overflow:hidden;
+}
+
+header{
+  text-align:center;
+  padding:18px 12px;
+  font-size:1.25rem;
+  letter-spacing:2px;
+  background:var(--panel-2);
+  border-bottom:4px solid var(--retro-red);
+  color:var(--retro-red);
+  user-select:none;
+}
+
+#fileInput{
+  display:block;
+  margin:16px auto 8px;
+  padding:10px 14px;
+  border-radius:8px;
+  border:2px solid var(--retro-red);
+  background:var(--panel-2);
+  color:var(--text);
+  cursor:pointer;
+  font-family:inherit;
+  font-size:.8rem;
+}
+#fileInput:hover{ background:var(--retro-red); color:#000 }
+
+#message{
+  text-align:center;
+  margin:4px 0 8px;
+  font-size:.85rem;
+  color:#f88;
+  min-height:1.2em;
+}
+
+/* System carousel - scrolls horizontally */
+#menu{
+  height:58vh;
+  overflow-x:auto;
+  overflow-y:hidden;
+  padding:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* Container holds tiles in a row */
+#menu .systems-container{
+  display:flex;
+  flex-direction:row;  /* left-right row */
+  gap:24px;
+  padding:0 20px;
+  min-width:max-content;
+}
+
+.system-tile {
+  flex-shrink:0;
+  width:180px;
+  height:100px;
+  background: var(--panel);
+  border: 3px solid var(--muted);
+  border-radius:12px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  font-size:.9rem;
+  text-align:center;
+  padding:10px;
+  color:#ccc;
+  cursor:pointer;
+  transition: transform .22s, border-color .22s, box-shadow .22s, color .22s;
+  user-select:none;
+}
+
+.system-image {
+  width:40px;
+  height:40px;
+  object-fit:contain;
+  filter: brightness(0.7);
+  transition: filter .22s;
+  margin-bottom:6px;
+}
+
+.system-name{
+  font-size:.75rem;
+  line-height:1.1;
+}
+
+.system-tile.selected .system-image,
+.system-tile:hover .system-image{
+  filter:brightness(1);
+}
+.system-tile.selected,
+.system-tile:hover{
+  transform:scale(1.22);
+  border-color:var(--retro-red);
+  box-shadow:0 0 28px var(--retro-red);
+  color:#fff;
+}
+
+/* Hide scrollbar but keep scrollable */
+#menu::-webkit-scrollbar{ display:none; }
+#menu{ scrollbar-width:none; -ms-overflow-style:none; }
+
+/* Overlay */
+#romOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.96);
+  display:none;
+  flex-direction:column;
+  padding:18px;
+  z-index:1000;
+}
+
+.overlay-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+}
+
+#overlaySystemName{
+  color:var(--retro-red);
+  font-size:1rem;
+  margin:0 6px;
+}
+
+#searchInput{
+  padding:8px 12px;
+  font-family:inherit;
+  font-size:.75rem;
+  border:2px solid var(--muted);
+  border-radius:8px;
+  background:var(--panel-2);
+  color:var(--text);
+  width:320px;
+}
+
+#romContainer{
+  display:grid;
+  grid-template-columns:1fr 1.1fr;
+  gap:22px;
+  height:calc(100vh - 120px);
+}
+
+/* ROM list */
+#romList{
+  background:var(--panel);
+  border:2px solid var(--muted);
+  border-radius:12px;
+  padding:12px;
+  overflow:auto;
+}
+
+#romList button{
+  width:100%;
+  text-align:left;
+  background:transparent;
+  color:var(--text);
+  border:2px solid transparent;
+  border-radius:8px;
+  padding:10px 12px;
+  font-size:.78rem;
+  font-family:inherit;
+  cursor:pointer;
+  transition:transform .15s, background .15s, border-color .15s, color .15s;
+  margin-bottom:8px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+#romList button img{
+  width:32px;
+  height:32px;
+  object-fit:contain;
+  border-radius:4px;
+}
+
+#romList button:hover,
+#romList button.selected{
+  background:var(--retro-red);
+  border-color:var(--retro-red);
+  color:#000;
+  transform:scale(1.02);
+}
+
+/* Detail panel */
+#romDetail{
+  background:var(--panel);
+  border:2px solid var(--muted);
+  border-radius:12px;
+  padding:14px;
+  overflow:auto;
+}
+
+.detail-top{
+  display:grid;
+  grid-template-columns:180px 1fr;
+  gap:16px;
+  align-items:start;
+}
+
+.cover{
+  width:100%;
+  max-width:180px;
+  border-radius:10px;
+  border:2px solid var(--muted);
+  background:#000;
+}
+
+.title{ margin:0 0 6px; font-size:1rem; }
+
+.meta{
+  display:grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap:8px 18px;
+  font-size:.7rem;
+  color:var(--sub);
+}
+.meta b{ color:#eee }
+
+.desc{
+  margin-top:12px;
+  font-size:.75rem;
+  line-height:1.35;
+  color:#ddd;
+  white-space:pre-wrap;
+}
+
+.shots{
+  margin-top:14px;
+  display:grid;
+  grid-template-columns: repeat(auto-fill,minmax(120px,1fr));
+  gap:10px;
+}
+.shots img{
+  width:100%;
+  border-radius:8px;
+  border:2px solid var(--muted);
+  display:block;
+}
+
+.loading, .error{
+  text-align:center;
+  color:#aaa;
+  font-size:.8rem;
+  padding:16px 0;
+}
+.error{ color:#f88 }
+
+#romList::-webkit-scrollbar,
+#romDetail::-webkit-scrollbar{ width:10px }
+#romList::-webkit-scrollbar-thumb,
+#romDetail::-webkit-scrollbar-thumb{
+  background:#333; border-radius:8px; border:2px solid #111;
+}
+
+footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.464);
+  color: white;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+<header>RETBRO</header>
+<p style="text-align:center;">Please note: You must use the v3+ Syntax</p>
+<input type="file" id="fileInput" accept=".retbrorl,.json"  />
+<div id="message"></div>
+<div id="menu"></div>
+
+<!-- Overlay -->
+<div id="romOverlay" aria-hidden="true">
+  <div class="overlay-header">
+    <h2 id="overlaySystemName">SYSTEM</h2>
+    <input id="searchInput" type="text" placeholder="Search ROMs..." />
+  </div>
+  <div id="romContainer">
+    <div id="romList" role="listbox" aria-label="ROM list"></div>
+    <div id="romDetail">
+      <div class="loading">Select a game to see details…</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <a href="credits.txt">Credits</a> | <a href="https://github.com/OptionallyBlueStudios/Retbro/WiKi">Docs</a> | <a href="https://retbro.optb.qzz.io/app?retbrorl=https://retbro.optb.qzz.io/demo/demo.retbrorl">Demo</a>
+</footer>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const menuDiv = document.getElementById('menu');
+const messageDiv = document.getElementById('message');
+const romOverlay = document.getElementById('romOverlay');
+const overlaySystemName = document.getElementById('overlaySystemName');
+const searchInput = document.getElementById('searchInput');
+const romListDiv = document.getElementById('romList');
+const romDetailDiv = document.getElementById('romDetail');
+
+let systems = [];
+let systemIndex = 0;
+let romDataGlobal = {};
+let roms = [];
+let romButtons = [];
+let romIndex = 0;
+let metadataCache = new Map();
+
+/* ---------- Utilities ---------- */
+const decodeName = (s) => s.split("/").pop().replace(/\.[^/.]+$/,"");
+const basename = (p) => p.split("/").pop();
+function el(tag, props={}, ...children){
+  const e = document.createElement(tag);
+  Object.assign(e, props);
+  for(const c of children){ if(c==null) continue; e.append(typeof c==='string'?document.createTextNode(c):c); }
+  return e;
+}
+
+/* ---------- Load file ---------- */
+async function loadFile(fileText){
+  try{
+    romDataGlobal = JSON.parse(fileText);
+    // Transform v2.x simple array into v3+ if needed
+    for(const sys in romDataGlobal){
+      const entry = romDataGlobal[sys];
+      if(Array.isArray(entry)){
+        romDataGlobal[sys] = { sys_image:"", roms: entry.map(r=>({ name:typeof r==="string"?r:"Unknown", url:typeof r==="string"?r:"", year:"", manufacturer:"", supported:true, notes:"", image:"" })) };
+      } else if(entry.roms){
+        // Ensure all ROMs have image
+        entry.roms = entry.roms.map(r=>({...{image:""}, ...r}));
+      }
+    }
+    systems = Object.keys(romDataGlobal);
+    if(!systems.length){ messageDiv.textContent = "No ROMs found."; return; }
+    messageDiv.textContent="← → (Arrow keys) to choose a system, Enter to open.";
+    buildSystemTiles();
+  }catch(e){
+    console.error(e);
+    messageDiv.textContent="Failed to parse file.";
+  }
+}
+
+fileInput.addEventListener('change', async ev=>{
+  const file = ev.target.files[0];
+  if(!file) return;
+  const text = await file.text();
+  loadFile(text);
+});
+
+/* ---------- System Tiles ---------- */
+function buildSystemTiles(){
+  menuDiv.innerHTML="";
+  const container = el("div",{className:"systems-container"});
+  systems.forEach((sys,i)=>{
+    const systemData = romDataGlobal[sys];
+    const imageUrl = systemData?.sys_image || 'images/systems/default.png';
+    const tile = el("div",{className:"system-tile"},
+      el("img",{className:"system-image", src:imageUrl, alt:sys, onerror:function(){this.src='images/systems/default.png';}}),
+      el("div",{className:"system-name", textContent:sys})
+    );
+    tile.addEventListener('click',()=>{ systemIndex=i; updateSystemSelection(); openRomOverlay(); });
+    tile.addEventListener('mouseenter',()=>{ systemIndex=i; updateSystemSelection(); });
+    container.appendChild(tile);
+  });
+  menuDiv.appendChild(container);
+  updateSystemSelection();
+}
+
+function updateSystemSelection(scroll=true){
+  const tiles = document.querySelectorAll('.system-tile');
+  tiles.forEach(t => t.classList.remove('selected'));
+  if(tiles[systemIndex]){
+    tiles[systemIndex].classList.add('selected');
+    if(scroll) tiles[systemIndex].scrollIntoView({ behavior:"smooth", inline:"center", block:"nearest" });
+  }
+}
+
+/* ---------- ROM Overlay ---------- */
+function openRomOverlay(){
+  const systemName = systems[systemIndex];
+  overlaySystemName.textContent=systemName;
+  const systemData = romDataGlobal[systemName];
+  roms = systemData.roms || [];
+  romListDiv.innerHTML=""; romDetailDiv.innerHTML='<div class="loading">Select a game…</div>'; metadataCache.clear();
+  romButtons = roms.map((rom,idx)=>{
+    const btn = el("button",{});
+    if(rom.image) btn.appendChild(el("img",{src:rom.image, alt:rom.name, onerror:function(){this.src='images/systems/default.png'}}));
+    btn.appendChild(document.createTextNode(rom.name));
+    btn.dataset.idx=idx;
+    btn.dataset.url=rom.url;
+    btn.addEventListener('click',()=>launchRomByUrl(rom.url));
+    btn.addEventListener('mouseenter',()=>{ romIndex=idx; highlightRomAndShowDetails(); });
+    romListDiv.appendChild(btn);
+    return btn;
+  });
+  romIndex=0; highlightRomAndShowDetails();
+  romOverlay.style.display="flex"; romOverlay.setAttribute("aria-hidden","false");
+  searchInput.value=""; searchInput.focus({preventScroll:true});
+}
+
+async function highlightRomAndShowDetails(){
+  const visible = romButtons.filter(b=>b.style.display!=='none');
+  if(!visible.length){ romDetailDiv.innerHTML='<div class="error">No results.</div>'; return; }
+  const target = visible[Math.min(romIndex,visible.length-1)];
+  romButtons.forEach(b=>b.classList.remove("selected"));
+  target.classList.add("selected");
+  const displayName=target.textContent;
+  const cacheKey=displayName;
+  let info = metadataCache.get(cacheKey);
+  if(!info){ info=await fetchGameInfo(displayName); metadataCache.set(cacheKey,info); }
+  renderDetail(info);
+}
+
+function renderDetail(info){
+  const cover = info.cover || `https://picsum.photos/300/420?random=${encodeURIComponent(info.name)}`;
+  const shots = info.screenshots||[];
+  const genresJoined = info.genres?.length?info.genres.join(", "):info.genre||"Unknown";
+  romDetailDiv.innerHTML="";
+  const top = el("div",{className:"detail-top"},
+    el("img",{className:"cover", src:cover, alt:"cover"}),
+    el("div",{} ,
+      el("h3",{className:"title", textContent:info.name||"Unknown Title"}),
+      el("div",{className:"meta"},
+        el("div",{},el("b",{},"System: ")," ",info.system||"Unknown"),
+        el("div",{},el("b",{},"Genre: ")," ",genresJoined),
+        el("div",{},el("b",{},"Developer: ")," ",info.dev||"Unknown"),
+        el("div",{},el("b",{},"Publisher: ")," ",info.publisher||"Unknown"),
+        el("div",{},el("b",{},"Players: ")," ",info.players||"Unknown"),
+        el("div",{},el("b",{},"Year: ")," ",info.year||"Unknown")
+      )
+    )
+  );
+  const desc = el("div",{className:"desc"}, info.desc||"No description available.");
+  romDetailDiv.append(top,desc);
+  if(shots.length){
+    const grid=el("div",{className:"shots"});
+    shots.slice(0,8).forEach(src=>grid.appendChild(el("img",{src,alt:"screenshot"})));
+    romDetailDiv.appendChild(grid);
+  }
+}
+
+/* ---------- Search/filter ---------- */
+searchInput.addEventListener('input', ()=>{
+  const q = searchInput.value.trim().toLowerCase();
+  romButtons.forEach(btn=>{ btn.style.display=btn.textContent.toLowerCase().includes(q)?'':'none'; });
+  romIndex=0; highlightRomAndShowDetails();
+});
+
+/* ---------- Launch ---------- */
+function launchRomByUrl(url){
+  window.location.href=`emulator.html?rom=${encodeURIComponent(url)}&prev=` + window.location;
+}
+
+/* ---------- Placeholder info ---------- */
+async function fetchGameInfo(displayName){
+  return {
+    name: displayName,
+    desc: "No description available.",
+    cover: `https://picsum.photos/300/420?random=${encodeURIComponent(displayName)}`,
+    screenshots: [],
+    system: "Unknown",
+    genres: [],
+    genre: "Unknown",
+    dev: "Unknown",
+    publisher: "Unknown",
+    players: "Unknown",
+    year: "Unknown"
+  };
+}
+
+</script>
+</body>
+</html>

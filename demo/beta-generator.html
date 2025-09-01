@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retbro Toolkit</title>
+<style>
+  :root {
+    --bg-color: #1e1e2f;
+    --card-color: #2c2c3c;
+    --text-color: #f0f0f0;
+    --accent-color: #4f9dff;
+    --hover-color: #3a3a50;
+  }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .top-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  input[type=text] {
+    padding: 8px;
+    border-radius: 5px;
+    border: none;
+    width: 200px;
+    outline: none;
+  }
+
+  button {
+    cursor: pointer;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: var(--accent-color);
+    color: white;
+    transition: 0.2s;
+    font-size: 12px;
+  }
+
+  button:hover {
+    background-color: #357edb;
+  }
+
+  #systemsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .system-card {
+    background: var(--card-color);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: 0.3s;
+  }
+
+  .system-header {
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .system-header:hover {
+    background: var(--hover-color);
+  }
+
+  .system-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .system-title img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    border-radius: 4px;
+  }
+
+  .links-list {
+    list-style: none;
+    padding: 0 20px 12px 20px;
+    margin: 0;
+    display: none;
+  }
+
+  .links-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    gap: 5px;
+  }
+
+  .links-list img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    border-radius: 4px;
+    margin-right: 5px;
+  }
+
+  .links-list a {
+    color: var(--accent-color);
+    text-decoration: none;
+    word-break: break-all;
+    flex: 1;
+  }
+
+  .links-list a:hover {
+    text-decoration: underline;
+  }
+
+  .file-input {
+    display: none;
+  }
+
+  .icon-btn {
+    font-size: 10px;
+    padding: 4px 6px;
+    margin-left: 3px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Retbro retbrorl generator</h1>
+
+<div class="top-bar">
+  <input type="text" id="newSystemName" placeholder="Enter system name">
+  <button onclick="addSystem()">+ Add System</button>
+  <button onclick="exportJSON()">Export .retbrorl</button>
+  <button onclick="document.getElementById('fileInput').click()">Import .retbrorl (v3+)</button>
+  <input type="file" id="fileInput" class="file-input" accept=".retbrorl,.json" onchange="importJSON(event)">
+  <button onclick="document.getElementById('v2FileInput').click()">Convert v2.x → v3+</button>
+  <input type="file" id="v2FileInput" class="file-input" accept=".json,.retbrorl" onchange="importV2Format(event)">
+</div>
+
+<div id="systemsContainer"></div>
+
+<script>
+let systems = {};
+
+// Add system
+function addSystem() {
+  const systemName = document.getElementById('newSystemName').value.trim();
+  if (!systemName) return alert("Please enter a system name!");
+  if (systems[systemName]) return alert("System already exists!");
+
+  systems[systemName] = { sys_image: "", roms: [] };
+  document.getElementById('newSystemName').value = '';
+  renderSystems();
+}
+
+// Edit system name
+function editSystemName(oldName) {
+  if (oldName === "Retbro") return alert("You cannot rename the Retbro system!");
+  const newName = prompt("Enter new name for system:", oldName);
+  if (!newName) return;
+  if (systems[newName] && newName !== oldName) return alert("System name already exists!");
+  systems[newName] = systems[oldName];
+  delete systems[oldName];
+  renderSystems();
+}
+
+// Remove system
+function removeSystem(systemName) {
+  if (systemName === "Retbro") return alert("You cannot remove the Retbro system!");
+  if (confirm(`Are you sure you want to remove ${systemName}?`)) {
+    delete systems[systemName];
+    renderSystems();
+  }
+}
+
+// Add ROM
+function addLink(systemName) {
+  const name = prompt("Enter ROM name:");
+  if (!name) return;
+  const url = prompt("Enter ROM link for " + name + ":");
+  if (!url) return;
+  systems[systemName].roms.push({
+    name: name,
+    url: url,
+    year: "",
+    manufacturer: "",
+    supported: true,
+    notes: "",
+    image: ""
+  });
+  renderSystems();
+}
+
+// Edit ROM
+function editLink(systemName, index) {
+  const rom = systems[systemName].roms[index];
+  const newName = prompt("Edit ROM name:", rom.name) || rom.name;
+  const newUrl = prompt("Edit ROM link:", rom.url) || rom.url;
+  rom.name = newName;
+  rom.url = newUrl;
+  renderSystems();
+}
+
+// Change ROM Image
+function changeRomImage(systemName, index) {
+  const rom = systems[systemName].roms[index];
+  const url = prompt("Enter image URL for " + rom.name + ":", rom.image || "");
+  if (url !== null) {
+    rom.image = url.trim();
+    renderSystems();
+  }
+}
+
+// Remove ROM
+function removeLink(systemName, index) {
+  systems[systemName].roms.splice(index, 1);
+  renderSystems();
+}
+
+// Toggle dropdown
+function toggleSystem(systemName) {
+  const list = document.getElementById('links-' + systemName);
+  list.style.display = list.style.display === 'block' ? 'none' : 'block';
+}
+
+// Change/Add System Image (via URL)
+function changeSystemImage(systemName) {
+  const url = prompt("Enter image URL for " + systemName + ":", systems[systemName].sys_image || "");
+  if (!url) return;
+  systems[systemName].sys_image = url.trim();
+  renderSystems();
+}
+
+// Clear system image
+function clearSystemImage(systemName) {
+  systems[systemName].sys_image = "";
+  renderSystems();
+}
+
+// Render all systems
+function renderSystems() {
+  const container = document.getElementById('systemsContainer');
+  container.innerHTML = '';
+
+  for (const systemName in systems) {
+    const sysData = systems[systemName];
+
+    const card = document.createElement('div');
+    card.className = 'system-card';
+
+    card.innerHTML = `
+      <div class="system-header" onclick="toggleSystem('${systemName}')">
+        <div class="system-title">
+          ${sysData.sys_image ? `<img src="${sysData.sys_image}" alt="icon">` : ''}
+          <h2>${systemName}</h2>
+        </div>
+        <div>
+          <button class="icon-btn" onclick="event.stopPropagation(); addLink('${systemName}')">＋</button>
+          ${systemName !== "Retbro" ? `
+            <button class="icon-btn" onclick="event.stopPropagation(); changeSystemImage('${systemName}')">📷</button>
+            <button class="icon-btn" onclick="event.stopPropagation(); clearSystemImage('${systemName}')">🗙</button>
+            <button class="icon-btn" onclick="event.stopPropagation(); editSystemName('${systemName}')">✎</button>
+            <button class="icon-btn" onclick="event.stopPropagation(); removeSystem('${systemName}')">🗑</button>
+          ` : ''}
+        </div>
+      </div>
+      <ul class="links-list" id="links-${systemName}">
+        ${sysData.roms.map((rom, i) => `
+          <li>
+            ${rom.image ? `<img src="${rom.image}" alt="game">` : ''}
+            <a href="${rom.url}" target="_blank">${rom.name}</a>
+            <button class="icon-btn" onclick="event.stopPropagation(); editLink('${systemName}', ${i})">✎</button>
+            <button class="icon-btn" onclick="event.stopPropagation(); removeLink('${systemName}', ${i})">🗑</button>
+            <button class="icon-btn" onclick="event.stopPropagation(); changeRomImage('${systemName}', ${i})">📷</button>
+          </li>
+        `).join('')}
+      </ul>
+    `;
+
+    container.appendChild(card);
+  }
+}
+
+// Export JSON
+function exportJSON(filename = 'roms.retbrorl') {
+  const dataStr = JSON.stringify(systems, null, 2);
+  const blob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Import JSON (v3+ only)
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const importedData = JSON.parse(e.target.result);
+      let valid = true;
+      for (const k in importedData) {
+        const v = importedData[k];
+        if (!Array.isArray(v.roms)) { valid = false; break; }
+        if (!v.roms.every(r => typeof r === 'object' && 'name' in r && 'url' in r)) valid = false;
+      }
+      if (!valid) return alert('Invalid format: this is not v3+. Use the "Convert v2.x → v3+" button.');
+      systems = importedData;
+      renderSystems();
+    } catch (err) {
+      alert("Invalid .retbrorl file!");
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Import v2.x and transform to v3+
+function importV2Format(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const oldData = JSON.parse(e.target.result);
+      const transformed = transformV2ToV3(oldData);
+      systems = { ...systems, ...transformed };
+      renderSystems();
+      const saveName = file.name.replace(/\.(json|retbrorl)$/i, '') + '.retbrorl';
+      exportJSON(saveName);
+      alert('Converted v2.x file to v3+ and saved as "' + saveName + '"');
+    } catch (err) {
+      alert("Invalid file or JSON parsing error: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Transform v2.x → v3+
+function transformV2ToV3(oldObj) {
+  const out = {};
+  for (const systemName in oldObj) {
+    const entry = oldObj[systemName];
+    if (!entry) continue;
+
+    if (Array.isArray(entry.roms)) {
+      out[systemName] = {
+        sys_image: entry.sys_image || "",
+        roms: entry.roms.map(r => ({
+          name: typeof r === "string" ? r : "Unknown",
+          url: typeof r === "string" ? r : "",
+          year: "",
+          manufacturer: "",
+          supported: true,
+          notes: "",
+          image: ""
+        }))
+      };
+    } else if (Array.isArray(entry)) {
+      out[systemName] = {
+        sys_image: "",
+        roms: entry.map(r => ({
+          name: typeof r === "string" ? r : "Unknown",
+          url: typeof r === "string" ? r : "",
+          year: "",
+          manufacturer: "",
+          supported: true,
+          notes: "",
+          image: ""
+        }))
+      };
+    } else {
+      out[systemName] = {
+        sys_image: "",
+        roms: [{
+          name: typeof entry === "string" ? entry : "Unknown",
+          url: typeof entry === "string" ? entry : "",
+          year: "",
+          manufacturer: "",
+          supported: true,
+          notes: "",
+          image: ""
+        }]
+      };
+    }
+  }
+  return out;
+}
+
+// Example placeholder system
+systems["Retbro"] = {
+  sys_image: "",
+  roms: [
+    { name: "About Placeholder", url: "", year: "", manufacturer: "", supported: true, notes: "Example entry", image: "" }
+  ]
+};
+
+renderSystems();
+</script>
+
+</body>
+</html>
